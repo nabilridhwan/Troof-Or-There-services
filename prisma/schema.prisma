@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model game {
+  room_id         String           @id @default("") @db.VarChar
+  status          String           @db.VarChar
+  game_type       BigInt
+  room_created_at DateTime         @default(now()) @db.Timestamptz(6)
+  log             log[]
+  player          player[]
+  player_sequence player_sequence?
+
+  @@map(" game")
+}
+
+model game_type {
+  id          BigInt    @id @unique @default(autoincrement())
+  description String
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  name        String
+}
+
+model log {
+  action       String   @db.VarChar
+  game_room_id String   @db.VarChar
+  player_id    String   @db.Uuid
+  data         String
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  game         game     @relation(fields: [game_room_id], references: [room_id], onDelete: NoAction, onUpdate: NoAction)
+  player       player   @relation(fields: [player_id], references: [player_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([game_room_id, player_id, created_at])
+}
+
+model player {
+  player_id       String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  display_name    String            @db.VarChar
+  joined_at       DateTime?         @default(now()) @db.Timestamptz(6)
+  game_room_id    String            @db.VarChar
+  is_party_leader Boolean           @default(false)
+  game            game              @relation(fields: [game_room_id], references: [room_id], onDelete: NoAction, onUpdate: NoAction)
+  log             log[]
+  player_sequence player_sequence[]
+}
+
+model player_sequence {
+  game_room_id      String    @id @db.VarChar
+  sequence          Json
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  current_player_id String    @db.Uuid
+  player            player    @relation(fields: [current_player_id], references: [player_id], onDelete: NoAction, onUpdate: NoAction)
+  game              game      @relation(fields: [game_room_id], references: [room_id], onDelete: NoAction, onUpdate: NoAction)
+}
