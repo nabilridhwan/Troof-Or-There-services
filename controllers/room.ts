@@ -1,14 +1,41 @@
 import type { Request, Response } from "express";
-import * as nanoid from "nanoid";
+import { z, ZodError, ZodIssue } from "zod";
 import prisma from "../database/prisma";
+import BadRequest from "../responses/BadRequest";
 import SuccessResponse from "../responses/SuccessResponse";
 import { STATUS, TYPE } from "../socket/game.types";
+import { generateRoomID } from "../utils/generators";
+
+const JoinRoomSchema = z.object({
+	room_id: z.string(),
+	display_name: z.string(),
+});
+
+const CreateRoomSchema = z.object({
+	display_name: z.string(),
+});
 
 const Room = {
 	Join: async (
 		req: Request<{}, {}, { room_id: string; display_name: string }>,
 		res: Response
 	) => {
+		try {
+			JoinRoomSchema.parse(req.body);
+		} catch (error) {
+			if (error instanceof ZodError) {
+				const e = error.flatten((issue: ZodIssue) => ({
+					message: issue.message,
+					error: issue.code,
+				}));
+
+				return new BadRequest("Invalid request", e).handleResponse(
+					req,
+					res
+				);
+			}
+		}
+
 		const { room_id, display_name } = req.body;
 
 		// Check if the room exists
@@ -19,10 +46,10 @@ const Room = {
 		});
 
 		if (!room) {
-			// TODO: Use response classes
-			return res.status(400).json({
-				message: "Room does not exist",
-			});
+			return new BadRequest("Room does not exist", {}).handleResponse(
+				req,
+				res
+			);
 		}
 
 		// Create a new player
@@ -36,7 +63,6 @@ const Room = {
 			},
 		});
 
-		// TODO: Use cookies to store the player ID and room ID
 		// Return the room and player_id
 		new SuccessResponse("Successfully joined room", {
 			player_id,
@@ -48,15 +74,26 @@ const Room = {
 		req: Request<{}, {}, { display_name: string }>,
 		res: Response
 	) => {
+		try {
+			CreateRoomSchema.parse(req.body);
+		} catch (error: any | ZodError) {
+			if (error instanceof ZodError) {
+				const e = error.flatten((issue: ZodIssue) => ({
+					message: issue.message,
+					error: issue.code,
+				}));
+
+				return new BadRequest("Invalid request", e).handleResponse(
+					req,
+					res
+				);
+			}
+		}
+
 		// Generate a room_id
-		const n = nanoid.customAlphabet(
-			"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-			6
-		);
+		console.log(`Created room with id ${generateRoomID().toUpperCase()}`);
 
-		console.log(`Created room with id ${n().toUpperCase()}`);
-
-		const room_id = n().toUpperCase();
+		const room_id = generateRoomID().toUpperCase();
 
 		// TODO: Verification of the display name
 		// Get the display name
@@ -88,7 +125,6 @@ const Room = {
 			},
 		});
 
-		// TODO: Use cookies to store the player ID and room ID
 		new SuccessResponse("Room Created", {
 			room_id: insertedRoomID,
 			room_creator: player,

@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 
 import cors from "cors";
 import * as dotenv from "dotenv";
+import playerRouter from "./routers/playerRouter";
 import roomRouter from "./routers/roomRouter";
 import gameHandler from "./socket/gameHandler";
 import roomHandler from "./socket/roomHandler";
@@ -25,6 +26,7 @@ app.use(cors());
 
 // Routers
 app.use("/api/room", roomRouter);
+app.use("/api/player", playerRouter);
 
 io.on("connection", (socket) => {
 	console.log(socket.rooms);

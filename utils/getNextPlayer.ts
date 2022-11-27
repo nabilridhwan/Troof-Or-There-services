@@ -1,12 +1,14 @@
 export function getNextPlayer(
-	currentPlayer: string,
-	players: string[]
+	currentPlayerID: string,
+	allPlayersInSequence: string[]
 ): string {
-	const idx = players.findIndex((player) => player === currentPlayer);
+	const idx = allPlayersInSequence.findIndex(
+		(player) => player === currentPlayerID
+	);
 
-	if (idx + 1 > players.length - 1) {
-		return players[0];
+	if (idx + 1 > allPlayersInSequence.length - 1) {
+		return allPlayersInSequence[0];
 	}
 
-	return players[idx + 1];
+	return allPlayersInSequence[idx + 1];
 }
