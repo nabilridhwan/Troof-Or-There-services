@@ -16,7 +16,7 @@ interface IPlayer {
 const gameHandler = (io: Server, socket: Socket) => {
 	console.log("Registered game handler");
 
-	const joinHandler = async (obj: IRoomID) => {
+	const joinHandler = async (obj: IRoomID & IPlayer) => {
 		console.log(`Received joined room ${obj.room_id}`);
 
 		// Obtain the logs
@@ -55,6 +55,44 @@ const gameHandler = (io: Server, socket: Socket) => {
 			...logData,
 			player,
 		});
+
+		// Rewrites the sequence
+		// Create sequence from list of players
+		console.log("Re-writing sequence");
+		const players = await prisma.player.findMany({
+			where: {
+				game_room_id: obj.room_id,
+			},
+		});
+
+		if (!players) return;
+
+		// Create the sequence in the database
+		await prisma.player_sequence.upsert({
+			create: {
+				sequence: players.map((player) => player.player_id),
+				current_player_id: players[0].player_id,
+				game_room_id: obj.room_id,
+			},
+
+			update: {
+				sequence: players.map((player) => player.player_id),
+				current_player_id: players[0].player_id,
+				game_room_id: obj.room_id,
+			},
+
+			where: {
+				game_room_id: obj.room_id,
+			},
+		});
+
+		console.log(
+			`Sequence re-written for ${
+				obj.room_id
+			}. Current Sequence is now ${players.map(
+				(player) => player.player_id
+			)}`
+		);
 	};
 
 	const selectTruthHandler = async (obj: IRoomID & IPlayer) => {
