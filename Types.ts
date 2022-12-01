@@ -7,6 +7,13 @@ export enum EVENTS {
 	START_GAME = "start_game",
 }
 
+export enum MESSAGE_EVENTS {
+	MESSAGE_NEW = "message:new",
+	MESSAGE_ANSWER = "message:answer",
+	MESSAGE_UPDATE = "message:update",
+	MESSAGE_DELETE = "message:delete",
+}
+
 export enum TRUTH_OR_DARE_GAME {
 	INCOMING_DATA = "incoming_data",
 	SELECT_DARE = "select_dare",
@@ -46,7 +53,7 @@ export interface StatusChangeObject extends RoomIDObject {
 	status: Status;
 }
 
-interface Player {
+export interface Player {
 	player_id: string;
 	display_name: string;
 	game_room_id: string;
@@ -54,13 +61,13 @@ interface Player {
 	joined_at: Date | null;
 }
 
-interface Room {
+export interface Room {
 	room_id: string;
 	status: Status | string;
 	room_created_at: Date;
 }
 
-interface Log {
+export interface Log {
 	player_id: string;
 	game_room_id: string;
 	action: Action | string;
@@ -68,6 +75,17 @@ interface Log {
 	created_at: Date;
 }
 
+export interface Message extends PlayerIDObject, RoomIDObject {
+	message: string;
+	type: "message" | "answer" | "reaction";
+	created_at: Date;
+}
+
+export interface MessageUpdate extends Message {
+	player: Player;
+}
+
+// This interface represents the events that are from server to clients when you use socket.emit/io.emit
 export interface ServerToClientEvents {
 	[EVENTS.PLAYERS_UPDATE]: (players: Player[]) => void;
 	[EVENTS.GAME_UPDATE]: (room: Room) => void;
@@ -79,8 +97,13 @@ export interface ServerToClientEvents {
 	[TRUTH_OR_DARE_GAME.SELECT_DARE]: (room: Room) => void;
 	[TRUTH_OR_DARE_GAME.CONTINUE]: (log: Log, player: Player) => void;
 	[TRUTH_OR_DARE_GAME.JOINED]: (log: Log, player: Player) => void;
+
+	// Messages
+	[MESSAGE_EVENTS.MESSAGE_NEW]: (message: MessageUpdate) => void;
+	[MESSAGE_EVENTS.MESSAGE_ANSWER]: (message: MessageUpdate) => void;
 }
 
+// This interface represents the events that are from clients to server when you use socket.on/io.on
 export interface ClientToServerEvents {
 	[EVENTS.GAME_UPDATE]: (obj: StatusChangeObject) => void;
 	[EVENTS.PLAYERS_UPDATE]: (obj: StatusChangeObject) => void;
@@ -103,4 +126,8 @@ export interface ClientToServerEvents {
 	[TRUTH_OR_DARE_GAME.CONTINUE]: (obj: RoomIDObject) => void;
 
 	[TRUTH_OR_DARE_GAME.JOINED]: (obj: RoomIDObject & PlayerIDObject) => void;
+
+	// Messages
+	[MESSAGE_EVENTS.MESSAGE_NEW]: (obj: Message) => void;
+	[MESSAGE_EVENTS.MESSAGE_ANSWER]: (obj: Message) => void;
 }

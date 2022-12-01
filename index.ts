@@ -7,6 +7,7 @@ import * as dotenv from "dotenv";
 import playerRouter from "./routers/playerRouter";
 import roomRouter from "./routers/roomRouter";
 import gameHandler from "./socket/gameHandler";
+import messageHandler from "./socket/messageHandler";
 import roomHandler from "./socket/roomHandler";
 import { ServerToClientEvents } from "./Types";
 
@@ -35,6 +36,7 @@ io.on("connection", (socket) => {
 
 	roomHandler(io, socket);
 	gameHandler(io, socket);
+	messageHandler(io, socket);
 });
 
 server.listen(process.env.PORT, () => {

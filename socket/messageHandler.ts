@@ -1,0 +1,38 @@
+import { Server, Socket } from "socket.io";
+import PlayerModel from "../model/player";
+import { Message, MessageUpdate, MESSAGE_EVENTS } from "../Types";
+
+const messageHandler = (io: Server, socket: Socket) => {
+	console.log("Registered message handler");
+
+	const newMessageHandler = async (obj: Message) => {
+		console.log(
+			`Received new message (${obj.type}). Sending it to ${obj.room_id}`
+		);
+
+		// Get the player
+
+		const playerThatMessaged = await PlayerModel.getPlayer({
+			player_id: obj.player_id,
+		});
+
+		if (!playerThatMessaged) {
+			console.log("Player not found. Aborting sending message");
+			return;
+		}
+
+		const messageToSend: MessageUpdate = {
+			...obj,
+			player: playerThatMessaged,
+		};
+
+		console.log(messageToSend);
+
+		// Emit the message to the room
+		io.emit(MESSAGE_EVENTS.MESSAGE_NEW, messageToSend);
+	};
+
+	socket.on(MESSAGE_EVENTS.MESSAGE_NEW, newMessageHandler);
+};
+
+export default messageHandler;
