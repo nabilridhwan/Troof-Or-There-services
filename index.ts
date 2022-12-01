@@ -8,10 +8,11 @@ import playerRouter from "./routers/playerRouter";
 import roomRouter from "./routers/roomRouter";
 import gameHandler from "./socket/gameHandler";
 import roomHandler from "./socket/roomHandler";
+import { ServerToClientEvents } from "./Types";
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
+const io = new Server<ServerToClientEvents>(server, {
 	cors: {
 		origin: "*",
 	},

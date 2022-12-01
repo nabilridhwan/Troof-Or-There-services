@@ -1,9 +1,10 @@
 import type { Request, Response } from "express";
 import { z, ZodError, ZodIssue } from "zod";
-import prisma from "../database/prisma";
+import PlayerModel from "../model/player";
+import RoomModel from "../model/room";
 import BadRequest from "../responses/BadRequest";
 import SuccessResponse from "../responses/SuccessResponse";
-import { STATUS, TYPE } from "../socket/game.types";
+import { Status } from "../Types";
 import { generateRoomID } from "../utils/generators";
 
 const JoinRoomSchema = z.object({
@@ -39,9 +40,10 @@ const Room = {
 		const { room_id, display_name } = req.body;
 
 		// Check if the room exists
-		const room = await prisma.game.findFirst({
-			where: {
-				room_id,
+		const room = await RoomModel.getRoom({
+			room_id,
+			status: {
+				not: Status.Game_Over,
 			},
 		});
 
@@ -53,13 +55,12 @@ const Room = {
 		}
 
 		// Create a new player
-		const { player_id } = await prisma.player.create({
-			data: {
-				display_name,
-				game_room_id: room_id,
-			},
-			select: {
-				player_id: true,
+		const { player_id } = await PlayerModel.createPlayer({
+			display_name,
+			game: {
+				connect: {
+					room_id: room.room_id,
+				},
 			},
 		});
 
@@ -100,30 +101,10 @@ const Room = {
 		const { display_name } = req.body;
 
 		// Create a game and select the room ID
-		const { room_id: insertedRoomID } = await prisma.game.create({
-			data: {
-				room_id,
-				game_type: TYPE.TRUTH_OR_DARE,
-				status: STATUS.IN_LOBBY,
-			},
-			select: {
-				room_id: true,
-			},
-		});
-
-		// Create a player and select the player ID
-		const player = await prisma.player.create({
-			data: {
-				game_room_id: insertedRoomID,
+		const { room_id: insertedRoomID, player } =
+			await RoomModel.createNewRoom(room_id, {
 				display_name,
-				is_party_leader: true,
-			},
-			select: {
-				player_id: true,
-				display_name: true,
-				is_party_leader: true,
-			},
-		});
+			});
 
 		new SuccessResponse("Room Created", {
 			room_id: insertedRoomID,

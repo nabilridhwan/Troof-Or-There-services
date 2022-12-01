@@ -1,152 +1,93 @@
 import { Server, Socket } from "socket.io";
-import prisma from "../database/prisma";
-import { EVENTS } from "./events.types";
-import { STATUS } from "./game.types";
+import PlayerModel from "../model/player";
+import RoomModel from "../model/room";
+import {
+	ClientToServerEvents,
+	DisconnectedRoomObject,
+	EVENTS,
+	RoomIDObject,
+	ServerToClientEvents,
+	Status,
+	StatusChangeObject,
+} from "../Types";
 
-interface IRoomID {
-	room_id: string;
-}
-
-interface DisconnectedRoom extends IRoomID {
-	player_id: string;
-}
-
-interface StatusChange extends IRoomID {
-	status: STATUS;
-}
-
-const roomHandler = (io: Server, socket: Socket) => {
+const roomHandler = (
+	io: Server<ClientToServerEvents, ServerToClientEvents>,
+	socket: Socket<ClientToServerEvents, ServerToClientEvents>
+) => {
 	console.log("Registered room handler");
 
-	const joinRoomHandler = async (obj: IRoomID) => {
+	const joinRoomHandler = async (obj: RoomIDObject) => {
 		// Make the socket join the room ID
 		socket.join(obj.room_id);
 
 		// Find all the players in the room
-		const players = await prisma.player.findMany({
-			where: {
-				game_room_id: obj.room_id,
-			},
-		});
+		const players = await PlayerModel.getPlayersInRoom(obj.room_id);
 
 		// Fetch the game so we can broadcast the status
-		const game = await prisma.game.findFirst({
-			where: {
-				room_id: obj.room_id,
-			},
+		const room = await RoomModel.getRoom({ room_id: obj.room_id });
+
+		if (!room) return;
+
+		// Broadcast back the room, updating the players
+		io.to(obj.room_id).emit(EVENTS.PLAYERS_UPDATE, players);
+
+		// Broadcast back the room, updating the game status
+		io.to(obj.room_id).emit(EVENTS.GAME_UPDATE, {
+			...room,
 		});
-
-		// Broadcast back the room
-		io.to(obj.room_id).emit(EVENTS.ROOM_PLAYERS_UPDATE, players);
-
-		if (game) {
-			// Broadcast status
-			io.to(obj.room_id).emit(EVENTS.STATUS_CHANGE, {
-				status: game.status,
-			});
-		}
 	};
 
-	const disconnectedHandler = async (obj: DisconnectedRoom) => {
-		console.log(`Disconnected received from ${obj.player_id}`);
-		// Remove the player from the room
+	const disconnectedHandler = async (obj: DisconnectedRoomObject) => {
+		console.log(
+			`Disconnected received from ${obj.player_id}. Method not implemented!`
+		);
 
-		// await prisma.player.delete({
-		// 	where: {
-		// 		player_id: obj.player_id,
-		// 	},
-		// });
+		// try {
+		// 	// The method below returns the remaining players in the room (after removing)
+		// 	const players = await RoomModel.removePlayerFromRoom(
+		// 		obj.room_id,
+		// 		obj.player_id
+		// 	);
 
-		// Find all the players in the room
-		const players = await prisma.player.findMany({
-			where: {
-				game_room_id: obj.room_id,
-			},
-		});
-
-		// Broadcast back to each room the latest players
-		io.to(obj.room_id).emit(EVENTS.ROOM_PLAYERS_UPDATE, players);
+		// 	// Broadcast back to each room the latest players
+		// 	io.to(obj.room_id).emit(EVENTS.PLAYERS_UPDATE, players);
+		// } catch (error) {
+		// 	console.log(
+		// 		"Cannot remove player from room. Maybe they're disconnected already!"
+		// 	);
+		// }
 	};
 
-	const statusChangeHandler = async (obj: StatusChange) => {
+	const statusChangeHandler = async (obj: StatusChangeObject) => {
 		console.log(
 			`Status changed to ${obj.status} received for ${obj.room_id}`
 		);
-		// Write to database that the game has started
-		const { status } = await prisma.game.update({
-			where: {
-				room_id: obj.room_id,
-			},
-			data: {
-				status: obj.status,
-			},
 
-			select: {
-				status: true,
-			},
-		});
+		const room = await RoomModel.updateRoomStatus(obj.room_id, obj.status);
 
 		// Broadcast to the room that the game has started
-		io.to(obj.room_id).emit(EVENTS.STATUS_CHANGE, { status });
+		io.to(obj.room_id).emit(EVENTS.GAME_UPDATE, {
+			...room,
+		});
 	};
 
-	const startGameHandler = async (obj: IRoomID) => {
+	const startGameHandler = async (obj: RoomIDObject) => {
 		console.log(`Start game received for ${obj.room_id}`);
 
-		console.log(`Making sequence of players for ${obj.room_id}`);
-
-		// Create sequence from list of players
-		const players = await prisma.player.findMany({
-			where: {
-				game_room_id: obj.room_id,
-			},
-		});
-
-		if (!players) return;
-
-		// Create the sequence in the database
-		await prisma.player_sequence.upsert({
-			create: {
-				sequence: players.map((player) => player.player_id),
-				current_player_id: players[0].player_id,
-				game_room_id: obj.room_id,
-			},
-
-			update: {
-				sequence: players.map((player) => player.player_id),
-				current_player_id: players[0].player_id,
-				game_room_id: obj.room_id,
-			},
-
-			where: {
-				game_room_id: obj.room_id,
-			},
-		});
-
-		console.log("Emitting server-side start game event");
-
-		console.log(
-			`Status changed to in_progress received for ${obj.room_id}`
+		// Update status
+		const room = await RoomModel.updateRoomStatus(
+			obj.room_id,
+			Status.In_Game
 		);
-		// Write to database that the game has started
-		const { status } = await prisma.game.update({
-			where: {
-				room_id: obj.room_id,
-			},
-			data: {
-				status: STATUS.IN_PROGRESS,
-			},
-
-			select: {
-				status: true,
-			},
-		});
 
 		// Broadcast to the room that the game has started
-		io.to(obj.room_id).emit(EVENTS.STATUS_CHANGE, { status });
+		io.to(obj.room_id).emit(EVENTS.GAME_UPDATE, {
+			...room,
+		});
 	};
 
-	socket.on(EVENTS.STATUS_CHANGE, statusChangeHandler);
+	socket.on(EVENTS.GAME_UPDATE, statusChangeHandler);
 	socket.on(EVENTS.DISCONNECTED, disconnectedHandler);
 	socket.on(EVENTS.JOIN_ROOM, joinRoomHandler);
 	socket.on(EVENTS.START_GAME, startGameHandler);

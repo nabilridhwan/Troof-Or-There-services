@@ -7,10 +7,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model log {
+  action       String   @db.VarChar
+  game_room_id String   @db.VarChar
+  player_id    String
+  data         String
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  game         game     @relation(fields: [game_room_id], references: [room_id], onDelete: Cascade)
+  player       player   @relation(fields: [player_id], references: [player_id], onDelete: Cascade)
+
+  @@id([game_room_id, player_id, created_at])
+}
+
+model player {
+  player_id       String            @id @default(cuid())
+  display_name    String            @db.VarChar
+  joined_at       DateTime?         @default(now()) @db.Timestamptz(6)
+  game_room_id    String            @db.VarChar
+  is_party_leader Boolean           @default(false)
+  log             log[]
+  game            game              @relation(fields: [game_room_id], references: [room_id], onDelete: Cascade)
+  player_sequence player_sequence[]
+}
+
+model player_sequence {
+  game_room_id      String    @id @db.VarChar
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  current_player_id String
+  player            player    @relation(fields: [current_player_id], references: [player_id], onDelete: Cascade)
+  game              game      @relation(fields: [game_room_id], references: [room_id], onDelete: Cascade)
+}
+
 model game {
   room_id         String           @id @default("") @db.VarChar
   status          String           @db.VarChar
-  game_type       BigInt
   room_created_at DateTime         @default(now()) @db.Timestamptz(6)
   log             log[]
   player          player[]
@@ -24,36 +54,4 @@ model game_type {
   description String
   created_at  DateTime? @default(now()) @db.Timestamptz(6)
   name        String
-}
-
-model log {
-  action       String   @db.VarChar
-  game_room_id String   @db.VarChar
-  player_id    String
-  data         String
-  created_at   DateTime @default(now()) @db.Timestamptz(6)
-  game         game     @relation(fields: [game_room_id], references: [room_id], onDelete: NoAction, onUpdate: NoAction)
-  player       player   @relation(fields: [player_id], references: [player_id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([game_room_id, player_id, created_at])
-}
-
-model player {
-  player_id       String            @id @default(cuid())
-  display_name    String            @db.VarChar
-  joined_at       DateTime?         @default(now()) @db.Timestamptz(6)
-  game_room_id    String            @db.VarChar
-  is_party_leader Boolean           @default(false)
-  game            game              @relation(fields: [game_room_id], references: [room_id], onDelete: NoAction, onUpdate: NoAction)
-  log             log[]
-  player_sequence player_sequence[]
-}
-
-model player_sequence {
-  game_room_id      String    @id @db.VarChar
-  sequence          Json
-  created_at        DateTime? @default(now()) @db.Timestamptz(6)
-  current_player_id String
-  player            player    @relation(fields: [current_player_id], references: [player_id], onDelete: NoAction, onUpdate: NoAction)
-  game              game      @relation(fields: [game_room_id], references: [room_id], onDelete: NoAction, onUpdate: NoAction)
 }

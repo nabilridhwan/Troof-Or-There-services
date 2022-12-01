@@ -3,7 +3,7 @@ import Room from "../controllers/room";
 
 const roomRouter = express.Router();
 
-roomRouter.post("/", Room.Create);
+roomRouter.post("/create", Room.Create);
 
 roomRouter.post("/join", Room.Join);
 
