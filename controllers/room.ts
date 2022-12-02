@@ -3,6 +3,7 @@ import { z, ZodError, ZodIssue } from "zod";
 import PlayerModel from "../model/player";
 import RoomModel from "../model/room";
 import BadRequest from "../responses/BadRequest";
+import NotFoundResponse from "../responses/NotFoundResponse";
 import SuccessResponse from "../responses/SuccessResponse";
 import { Status } from "../Types";
 import { generateRoomID } from "../utils/generators";
@@ -48,10 +49,10 @@ const Room = {
 		});
 
 		if (!room) {
-			return new BadRequest("Room does not exist", {}).handleResponse(
-				req,
-				res
-			);
+			return new NotFoundResponse(
+				"Room does not exist",
+				{}
+			).handleResponse(req, res);
 		}
 
 		// Create a new player

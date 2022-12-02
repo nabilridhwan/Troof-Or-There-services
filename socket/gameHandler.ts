@@ -5,9 +5,12 @@ import RoomModel from "../model/room";
 import Sequence from "../model/sequence";
 import {
 	Action,
+	EVENTS,
+	MESSAGE_EVENTS,
 	PlayerIDObject,
 	RoomIDObject,
 	Status,
+	SystemMessage,
 	TRUTH_OR_DARE_GAME,
 } from "../Types";
 import { get_dare, get_truth } from "../utils/truthOrDareGenerator";
@@ -46,6 +49,11 @@ const gameHandler = (io: Server, socket: Socket) => {
 		console.log("Broadcasting back");
 
 		socket.emit(TRUTH_OR_DARE_GAME.INCOMING_DATA, lastLogItem!, player!);
+
+		const playersInRoom = await PlayerModel.getPlayersInRoom(obj.room_id);
+
+		// Broadcast the players in the room
+		io.to(obj.room_id).emit(EVENTS.PLAYERS_UPDATE, playersInRoom);
 	};
 
 	const selectTruthHandler = async (obj: RoomIDObject & PlayerIDObject) => {
@@ -210,17 +218,32 @@ const gameHandler = (io: Server, socket: Socket) => {
 
 		const { current_player_id } = sequenceData;
 
+		// Check if the current player is also the party leader. If so, then set the next player as the party leader
+		const player = await PlayerModel.getPlayer({
+			player_id: obj.player_id,
+		});
+
+		const systemMessageToSend: SystemMessage = {
+			message: `${player?.display_name} has left the game`,
+			room_id: obj.room_id,
+			created_at: new Date(),
+			type: "system",
+		};
+
+		io.to(obj.room_id).emit(
+			MESSAGE_EVENTS.MESSAGE_SYSTEM,
+			systemMessageToSend
+		);
+
+		// Emit to the room that the player has left, and hence the person sent back, if the ID matches, they will be redirected to home page
+		console.log("Emitting EVENTS.LEFT_GAME");
+		io.to(obj.room_id).emit(EVENTS.LEFT_GAME, player);
+
 		// If the player leaving is the current player, then set the next player
 		if (current_player_id === obj.player_id) {
 			console.log(
 				`Player ${obj.player_id} is the current player and is leaving. Skipping the user's turn.`
 			);
-
-			// Check if the current player is also the party leader. If so, then set the next player as the party leader
-
-			const player = await PlayerModel.getPlayer({
-				player_id: obj.player_id,
-			});
 
 			if (player?.is_party_leader) {
 				console.log(
@@ -302,11 +325,22 @@ const gameHandler = (io: Server, socket: Socket) => {
 			// socket.emit(TRUTH_OR_DARE_GAME.INCOMING_DATA, logData, player!);
 		}
 
-		// Remove player from the room
-		const remainingPlayers = await RoomModel.removePlayerFromRoom(
-			obj.room_id,
-			obj.player_id
+		try {
+			// Remove player from the room
+			await RoomModel.removePlayerFromRoom(obj.room_id, obj.player_id);
+		} catch (error) {
+			console.log(
+				`Error removing player ${obj.player_id} from room: `,
+				error
+			);
+		}
+
+		// Get remaining players
+		const remainingPlayers = await PlayerModel.getPlayersInRoom(
+			obj.room_id
 		);
+
+		io.to(obj.room_id).emit(EVENTS.PLAYERS_UPDATE, remainingPlayers);
 	};
 
 	socket.on(TRUTH_OR_DARE_GAME.LEAVE_GAME, leaveGameHandler);

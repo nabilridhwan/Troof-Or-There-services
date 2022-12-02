@@ -5,6 +5,7 @@ export enum EVENTS {
 	GAME_UPDATE = "event:game_update",
 
 	START_GAME = "start_game",
+	LEFT_GAME = "left_game",
 }
 
 export enum MESSAGE_EVENTS {
@@ -12,6 +13,8 @@ export enum MESSAGE_EVENTS {
 	MESSAGE_ANSWER = "message:answer",
 	MESSAGE_UPDATE = "message:update",
 	MESSAGE_DELETE = "message:delete",
+	MESSAGE_SYSTEM = "message:system",
+	JOIN = "join",
 }
 
 export enum TRUTH_OR_DARE_GAME {
@@ -77,7 +80,13 @@ export interface Log {
 
 export interface Message extends PlayerIDObject, RoomIDObject {
 	message: string;
-	type: "message" | "answer" | "reaction";
+	type: "message" | "answer" | "reaction" | "system";
+	created_at: Date;
+}
+
+export interface SystemMessage extends RoomIDObject {
+	message: string;
+	type: "system";
 	created_at: Date;
 }
 
@@ -89,6 +98,7 @@ export interface MessageUpdate extends Message {
 export interface ServerToClientEvents {
 	[EVENTS.PLAYERS_UPDATE]: (players: Player[]) => void;
 	[EVENTS.GAME_UPDATE]: (room: Room) => void;
+	[EVENTS.LEFT_GAME]: (playerRemoved: Player) => void;
 
 	[TRUTH_OR_DARE_GAME.INCOMING_DATA]: (log: Log, player: Player) => void;
 
@@ -101,6 +111,7 @@ export interface ServerToClientEvents {
 	// Messages
 	[MESSAGE_EVENTS.MESSAGE_NEW]: (message: MessageUpdate) => void;
 	[MESSAGE_EVENTS.MESSAGE_ANSWER]: (message: MessageUpdate) => void;
+	[MESSAGE_EVENTS.MESSAGE_SYSTEM]: (message: SystemMessage) => void;
 }
 
 // This interface represents the events that are from clients to server when you use socket.on/io.on
@@ -130,4 +141,5 @@ export interface ClientToServerEvents {
 	// Messages
 	[MESSAGE_EVENTS.MESSAGE_NEW]: (obj: Message) => void;
 	[MESSAGE_EVENTS.MESSAGE_ANSWER]: (obj: Message) => void;
+	[MESSAGE_EVENTS.JOIN]: (obj: RoomIDObject) => void;
 }

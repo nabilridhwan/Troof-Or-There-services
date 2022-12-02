@@ -1,9 +1,13 @@
 import { Server, Socket } from "socket.io";
 import PlayerModel from "../model/player";
-import { Message, MessageUpdate, MESSAGE_EVENTS } from "../Types";
+import { Message, MessageUpdate, MESSAGE_EVENTS, RoomIDObject } from "../Types";
 
 const messageHandler = (io: Server, socket: Socket) => {
 	console.log("Registered message handler");
+
+	const joinMessageHandler = async (obj: RoomIDObject) => {
+		socket.join(obj.room_id);
+	};
 
 	const newMessageHandler = async (obj: Message) => {
 		console.log(
@@ -29,9 +33,10 @@ const messageHandler = (io: Server, socket: Socket) => {
 		console.log(messageToSend);
 
 		// Emit the message to the room
-		io.emit(MESSAGE_EVENTS.MESSAGE_NEW, messageToSend);
+		io.to(obj.room_id).emit(MESSAGE_EVENTS.MESSAGE_NEW, messageToSend);
 	};
 
+	socket.on(MESSAGE_EVENTS.JOIN, joinMessageHandler);
 	socket.on(MESSAGE_EVENTS.MESSAGE_NEW, newMessageHandler);
 };
 
