@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 
 import cors from "cors";
 import * as dotenv from "dotenv";
+import SuccessResponse from "./responses/SuccessResponse";
 import playerRouter from "./routers/playerRouter";
 import roomRouter from "./routers/roomRouter";
 import gameHandler from "./socket/gameHandler";
@@ -25,6 +26,13 @@ dotenv.config();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+
+app.get("/", (req, res) => {
+	// TODO: Keep version somewhere sage
+	return new SuccessResponse("Server is running", {
+		version: "0.1.3",
+	}).handleResponse(req, res);
+});
 
 // Routers
 app.use("/api/room", roomRouter);

@@ -94,6 +94,18 @@ const gameHandler = (io: Server, socket: Socket) => {
 
 		console.log("Emitting back new data");
 
+		const systemMessageToSend: SystemMessage = {
+			message: `${player?.display_name} selected Truth`,
+			room_id: obj.room_id,
+			created_at: new Date(),
+			type: "system",
+		};
+
+		io.to(obj.room_id).emit(
+			MESSAGE_EVENTS.MESSAGE_SYSTEM,
+			systemMessageToSend
+		);
+
 		io.to(obj.room_id).emit(
 			TRUTH_OR_DARE_GAME.INCOMING_DATA,
 			logData,
@@ -140,6 +152,18 @@ const gameHandler = (io: Server, socket: Socket) => {
 		});
 
 		console.log("Emitting back new data");
+
+		const systemMessageToSend: SystemMessage = {
+			message: `${player?.display_name} selected Dare`,
+			room_id: obj.room_id,
+			created_at: new Date(),
+			type: "system",
+		};
+
+		io.to(obj.room_id).emit(
+			MESSAGE_EVENTS.MESSAGE_SYSTEM,
+			systemMessageToSend
+		);
 
 		io.to(obj.room_id).emit(
 			TRUTH_OR_DARE_GAME.INCOMING_DATA,
@@ -201,6 +225,18 @@ const gameHandler = (io: Server, socket: Socket) => {
 
 		console.log(
 			`Emitting back new data: Now player ${nextPlayer.current_player_id} is waiting_for_selection`
+		);
+
+		const systemMessageToSend: SystemMessage = {
+			message: `It's ${player?.display_name} turn`,
+			room_id: obj.room_id,
+			created_at: new Date(),
+			type: "system",
+		};
+
+		io.to(obj.room_id).emit(
+			MESSAGE_EVENTS.MESSAGE_SYSTEM,
+			systemMessageToSend
 		);
 
 		io.to(obj.room_id).emit(TRUTH_OR_DARE_GAME.CONTINUE, logData!, player!);
