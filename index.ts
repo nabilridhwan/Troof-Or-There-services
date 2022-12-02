@@ -30,7 +30,7 @@ app.use(cors());
 app.get("/", (req, res) => {
 	// TODO: Keep version somewhere sage
 	return new SuccessResponse("Server is running", {
-		version: "0.1.3",
+		version: "0.1.4",
 	}).handleResponse(req, res);
 });
 
