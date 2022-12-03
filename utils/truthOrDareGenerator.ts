@@ -42,48 +42,42 @@ const embarrassing_questions_truth =
 		);
 export function get_dare() {
 	const all_questions = [
-			dare_normal_questions,
-			more_normal_dare_questions,
-			dirty_dare_questions_part_1,
-			dirty_dare_questions_part_2,
+			...dare_normal_questions,
+			...more_normal_dare_questions,
+			...dirty_dare_questions_part_1,
+			...dirty_dare_questions_part_2,
 		],
-		question_pack =
-			all_questions[Math.floor(Math.random() * all_questions.length)],
 		question =
-			question_pack[Math.floor(Math.random() * question_pack.length)];
+			all_questions[Math.floor(Math.random() * all_questions.length)];
 	return question;
 }
 export function get_truth() {
 	const all_questions = [
-			embarrassing_questions_truth,
-			truth_girl_questions,
-			tord_friend_questions,
-			truth_guy_questions,
-			flirty_questions,
-			dirty_questions,
+			...embarrassing_questions_truth,
+			...truth_girl_questions,
+			...tord_friend_questions,
+			...truth_guy_questions,
+			...flirty_questions,
+			...dirty_questions,
 		],
-		question_pack =
-			all_questions[Math.floor(Math.random() * all_questions.length)],
 		question =
-			question_pack[Math.floor(Math.random() * question_pack.length)];
+			all_questions[Math.floor(Math.random() * all_questions.length)];
 	return question;
 }
 export function get_random_question() {
 	const all_questions = [
-			embarrassing_questions_truth,
-			truth_girl_questions,
-			tord_friend_questions,
-			truth_guy_questions,
-			flirty_questions,
-			dirty_questions,
-			dare_normal_questions,
-			more_normal_dare_questions,
-			dirty_dare_questions_part_1,
-			dirty_dare_questions_part_2,
+			...embarrassing_questions_truth,
+			...truth_girl_questions,
+			...tord_friend_questions,
+			...truth_guy_questions,
+			...flirty_questions,
+			...dirty_questions,
+			...dare_normal_questions,
+			...more_normal_dare_questions,
+			...dirty_dare_questions_part_1,
+			...dirty_dare_questions_part_2,
 		],
-		question_pack =
-			all_questions[Math.floor(Math.random() * all_questions.length)],
 		question =
-			question_pack[Math.floor(Math.random() * question_pack.length)];
+			all_questions[Math.floor(Math.random() * all_questions.length)];
 	return question;
 }

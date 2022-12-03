@@ -1,6 +1,7 @@
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
+import { version } from "./package.json";
 
 import cors from "cors";
 import * as dotenv from "dotenv";
@@ -30,7 +31,7 @@ app.use(cors());
 app.get("/", (req, res) => {
 	// TODO: Keep version somewhere sage
 	return new SuccessResponse("Server is running", {
-		version: "0.1.4",
+		version,
 	}).handleResponse(req, res);
 });
 
