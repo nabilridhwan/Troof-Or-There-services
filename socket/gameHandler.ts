@@ -228,7 +228,7 @@ const gameHandler = (io: Server, socket: Socket) => {
 		);
 
 		const systemMessageToSend: SystemMessage = {
-			message: `It's ${player?.display_name} turn`,
+			message: `It's ${player?.display_name}'s turn`,
 			room_id: obj.room_id,
 			created_at: new Date(),
 			type: "system",

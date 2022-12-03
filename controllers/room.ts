@@ -69,6 +69,7 @@ const Room = {
 		new SuccessResponse("Successfully joined room", {
 			player_id,
 			room_id,
+			status: room.status,
 		}).handleResponse(req, res);
 	},
 
