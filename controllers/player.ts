@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import prisma from "../database/prisma";
+import NotFoundResponse from "../responses/NotFoundResponse";
 import SuccessResponse from "../responses/SuccessResponse";
 
 const Player = {
@@ -16,10 +17,10 @@ const Player = {
 		});
 
 		if (!player) {
-			return res.status(404).json({
-				message: "Player not found",
-				error: "PLAYER_NOT_FOUND",
-			});
+			return new NotFoundResponse("Player not found", []).handleResponse(
+				req,
+				res
+			);
 		}
 
 		return new SuccessResponse("Player found", player).handleResponse(

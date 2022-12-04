@@ -1,6 +1,7 @@
 import { Server, Socket } from "socket.io";
 import PlayerModel from "../model/player";
 import { Message, MessageUpdate, MESSAGE_EVENTS, RoomIDObject } from "../Types";
+import filterProfanity from "../utils/filterProfanity";
 
 const messageHandler = (io: Server, socket: Socket) => {
 	console.log("Registered message handler");
@@ -63,6 +64,7 @@ const messageHandler = (io: Server, socket: Socket) => {
 
 		const messageToSend: MessageUpdate = {
 			...obj,
+			message: filterProfanity.clean(obj.message),
 			player: playerThatMessaged,
 		};
 

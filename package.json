@@ -1,6 +1,6 @@
 {
 	"name": "troof-or-there-services",
-	"version": "0.1.8",
+	"version": "0.1.9",
 	"description": "",
 	"main": "index.ts",
 	"scripts": {
@@ -12,6 +12,8 @@
 	"license": "ISC",
 	"dependencies": {
 		"@prisma/client": "^4.7.0",
+		"@types/bad-words": "^3.0.1",
+		"bad-words": "^3.0.4",
 		"better-tord": "^1.3.7",
 		"cors": "^2.8.5",
 		"dotenv": "^16.0.3",
