@@ -30,6 +30,15 @@ const messageHandler = (io: Server, socket: Socket) => {
 			player: playerThatMessaged,
 		};
 
+		// await prisma.chat.create({
+		// 	data: {
+		// 		message: messageToSend.message,
+		// 		type: messageToSend.type,
+		// 		room_id: messageToSend.room_id,
+		// 		created_at: messageToSend.created_at,
+		// 	},
+		// });
+
 		console.log(messageToSend);
 
 		// Emit the message to the room
@@ -58,6 +67,16 @@ const messageHandler = (io: Server, socket: Socket) => {
 		};
 
 		console.log(messageToSend);
+
+		// await prisma.chat.create({
+		// 	data: {
+		// 		message: messageToSend.message,
+		// 		type: messageToSend.type,
+		// 		room_id: messageToSend.room_id,
+		// 		player_id: messageToSend.player_id,
+		// 		created_at: messageToSend.created_at,
+		// 	},
+		// });
 
 		// Emit the message to the room
 		io.to(obj.room_id).emit(MESSAGE_EVENTS.MESSAGE_NEW, messageToSend);
