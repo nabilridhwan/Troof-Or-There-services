@@ -40,12 +40,16 @@ app.use("/api/room", roomRouter);
 app.use("/api/player", playerRouter);
 
 io.on("connection", (socket) => {
-	console.log(socket.rooms);
-	console.log("A user connected");
+	console.log("Current active sockets: ", io.engine.clientsCount);
+	console.log(`A user connected (${socket.id})`);
 
 	roomHandler(io, socket);
 	gameHandler(io, socket);
 	messageHandler(io, socket);
+
+	socket.on("disconnect", () => {
+		console.log(`A user disconnected (${socket.id})`);
+	});
 });
 
 server.listen(process.env.PORT, () => {

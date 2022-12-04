@@ -11,6 +11,9 @@ const PlayerModel = {
 	getPlayers: async (selectObject: Prisma.playerWhereInput) => {
 		return await prisma.player.findMany({
 			where: selectObject,
+			orderBy: {
+				is_party_leader: "desc",
+			},
 		});
 	},
 
@@ -33,6 +36,17 @@ const PlayerModel = {
 		return await prisma.player.create({
 			data: {
 				...player,
+			},
+		});
+	},
+
+	updatePlayerName: async (playerId: string, newName: string) => {
+		return await prisma.player.update({
+			where: {
+				player_id: playerId,
+			},
+			data: {
+				display_name: newName,
 			},
 		});
 	},

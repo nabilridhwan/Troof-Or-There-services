@@ -6,6 +6,8 @@ export enum EVENTS {
 
 	START_GAME = "start_game",
 	LEFT_GAME = "left_game",
+
+	CHANGE_NAME = "change_name",
 }
 
 export enum MESSAGE_EVENTS {
@@ -123,6 +125,10 @@ export interface ClientToServerEvents {
 	[EVENTS.DISCONNECTED]: (obj: DisconnectedRoomObject) => void;
 	[EVENTS.JOIN_ROOM]: (obj: RoomIDObject) => void;
 	[EVENTS.START_GAME]: (obj: RoomIDObject) => void;
+
+	[EVENTS.CHANGE_NAME]: (
+		obj: RoomIDObject & PlayerIDObject & { display_name: string }
+	) => void;
 
 	[TRUTH_OR_DARE_GAME.LEAVE_GAME]: (
 		obj: RoomIDObject & PlayerIDObject

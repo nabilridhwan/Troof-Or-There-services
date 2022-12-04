@@ -5,6 +5,7 @@ import {
 	ClientToServerEvents,
 	DisconnectedRoomObject,
 	EVENTS,
+	Room,
 	RoomIDObject,
 	ServerToClientEvents,
 	Status,
@@ -22,19 +23,22 @@ const roomHandler = (
 		socket.join(obj.room_id);
 
 		// Find all the players in the room
-		const players = await PlayerModel.getPlayersInRoom(obj.room_id);
+		const players = PlayerModel.getPlayersInRoom(obj.room_id);
 
 		// Fetch the game so we can broadcast the status
-		const room = await RoomModel.getRoom({ room_id: obj.room_id });
+		const room = RoomModel.getRoom({ room_id: obj.room_id });
 
 		if (!room) return;
 
+		// Wait for all promises to complete
+		const [playersInRoom, roomData] = await Promise.all([players, room]);
+
 		// Broadcast back the room, updating the players
-		io.to(obj.room_id).emit(EVENTS.PLAYERS_UPDATE, players);
+		io.to(obj.room_id).emit(EVENTS.PLAYERS_UPDATE, playersInRoom);
 
 		// Broadcast back the room, updating the game status
 		io.to(obj.room_id).emit(EVENTS.GAME_UPDATE, {
-			...room,
+			...(roomData as Room),
 		});
 	};
 
@@ -87,10 +91,26 @@ const roomHandler = (
 		});
 	};
 
+	const changeUserDisplayName = async (
+		obj: Parameters<ClientToServerEvents[EVENTS.CHANGE_NAME]>[0]
+	) => {
+		console.log(`Change name received for ${obj.player_id} ${obj.room_id}`);
+
+		// Change the users's name
+		await PlayerModel.updatePlayerName(obj.player_id, obj.display_name);
+
+		// Get all the players in the room
+		const players = await PlayerModel.getPlayersInRoom(obj.room_id);
+
+		// Broadcast back to the room the latest players
+		io.to(obj.room_id).emit(EVENTS.PLAYERS_UPDATE, players);
+	};
+
 	socket.on(EVENTS.GAME_UPDATE, statusChangeHandler);
 	socket.on(EVENTS.DISCONNECTED, disconnectedHandler);
 	socket.on(EVENTS.JOIN_ROOM, joinRoomHandler);
 	socket.on(EVENTS.START_GAME, startGameHandler);
+	socket.on(EVENTS.CHANGE_NAME, changeUserDisplayName);
 };
 
 export default roomHandler;

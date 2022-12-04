@@ -24,8 +24,8 @@ const gameHandler = (io: Server, socket: Socket) => {
 		// Let the socket join the room
 		socket.join(obj.room_id);
 
-		// Obtain the logs
-		const lastLogItem = await prisma.log.findFirst({
+		// Obtain the last log item
+		const lastLogItem = prisma.log.findFirst({
 			where: {
 				game_room_id: obj.room_id,
 			},
@@ -34,26 +34,51 @@ const gameHandler = (io: Server, socket: Socket) => {
 			},
 		});
 
-		const sequenceData = await Sequence.getCurrentPlayer(obj.room_id);
-
-		if (!sequenceData) return;
-
-		const { current_player_id } = sequenceData;
-
 		// Find the current player
-		const player = await PlayerModel.getPlayer({
+		const sequenceData = await Sequence.getCurrentPlayer(obj.room_id);
+		if (!sequenceData) return;
+		const { current_player_id } = sequenceData;
+		const player = PlayerModel.getPlayer({
 			player_id: current_player_id,
+		});
+
+		// Find the player who joined
+		const playerWhoJoined = PlayerModel.getPlayer({
+			player_id: obj.player_id,
 		});
 
 		// Broadcast the log to the room
 		console.log("Broadcasting back");
 
-		socket.emit(TRUTH_OR_DARE_GAME.INCOMING_DATA, lastLogItem!, player!);
+		// Get players in room
+		const playersInRoom = PlayerModel.getPlayersInRoom(obj.room_id);
 
-		const playersInRoom = await PlayerModel.getPlayersInRoom(obj.room_id);
+		Promise.all([lastLogItem, player, playersInRoom, playerWhoJoined]).then(
+			([lastLogItem, player, playersInRoom, playerWhoJoinedData]) => {
+				// Broadcast the log to the room
+				socket.emit(
+					TRUTH_OR_DARE_GAME.INCOMING_DATA,
+					lastLogItem!,
+					player!
+				);
 
-		// Broadcast the players in the room
-		io.to(obj.room_id).emit(EVENTS.PLAYERS_UPDATE, playersInRoom);
+				const systemMessageToSend: SystemMessage = {
+					message: `${playerWhoJoinedData?.display_name} has joined the game`,
+					room_id: obj.room_id,
+					created_at: new Date(),
+					type: "system",
+				};
+
+				// https://stackoverflow.com/questions/10058226/send-response-to-all-clients-except-sender
+				// sending to all clients in 'game' room(channel) except sender
+				socket.broadcast
+					.to(obj.room_id)
+					.emit(MESSAGE_EVENTS.MESSAGE_SYSTEM, systemMessageToSend);
+
+				// Broadcast the players in the room
+				io.to(obj.room_id).emit(EVENTS.PLAYERS_UPDATE, playersInRoom);
+			}
+		);
 	};
 
 	const selectTruthHandler = async (obj: RoomIDObject & PlayerIDObject) => {
@@ -86,7 +111,7 @@ const gameHandler = (io: Server, socket: Socket) => {
 		const logData = await prisma.log.create({
 			data: {
 				game_room_id: obj.room_id,
-				player_id: sequenceData.current_player_id,
+				player_id: current_player_id,
 				action: Action.Truth,
 				data: truth,
 			},
@@ -175,18 +200,12 @@ const gameHandler = (io: Server, socket: Socket) => {
 	const continueHandler = async (obj: RoomIDObject) => {
 		console.log("Continuing to next player");
 
-		// Get the current player and find the next player, pass back the action
-
 		// Find the current player in the sequence
 		const sequenceData = await Sequence.getCurrentPlayer(obj.room_id);
-
 		if (!sequenceData) return;
-
 		// Get the current_player_id
 		const { current_player_id } = sequenceData;
-
 		console.log(`Current Player: ${current_player_id}`);
-
 		if (!sequenceData) {
 			console.log("No sequence data found. Aborting");
 			return;
@@ -194,8 +213,12 @@ const gameHandler = (io: Server, socket: Socket) => {
 
 		// Set the next player automatically (the function returns the next player)
 		const nextPlayer = await Sequence.setNextPlayer(obj.room_id);
-
 		if (!nextPlayer) return;
+
+		// Find the current player
+		const player = await PlayerModel.getPlayer({
+			player_id: nextPlayer.current_player_id,
+		});
 
 		console.log("Writing to log");
 
@@ -216,11 +239,6 @@ const gameHandler = (io: Server, socket: Socket) => {
 				game_room_id: true,
 				created_at: true,
 			},
-		});
-
-		// Find the current player
-		const player = await PlayerModel.getPlayer({
-			player_id: nextPlayer.current_player_id,
 		});
 
 		console.log(
