@@ -15,12 +15,11 @@ const ChatModel = {
 	},
 
 	pushMessage: async (message: MessageUpdate) => {
-		const { room_id, message: messageText, type, player_id } = message;
+		const { room_id, message: messageText, type } = message;
 
 		return await prisma.chat.create({
 			data: {
 				room_id,
-				player_id,
 				type,
 				display_name: message.display_name,
 				message: messageText,

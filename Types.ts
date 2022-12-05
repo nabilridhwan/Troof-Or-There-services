@@ -18,6 +18,7 @@ export enum MESSAGE_EVENTS {
 	MESSAGE_UPDATE = "message:update",
 	MESSAGE_DELETE = "message:delete",
 	MESSAGE_SYSTEM = "message:system",
+	IS_TYPING = "is_typing",
 	JOIN = "join",
 }
 
@@ -54,6 +55,10 @@ export interface PlayerIDObject {
 	player_id: string;
 }
 
+export interface PlayerDisplayNameObject {
+	display_name: string;
+}
+
 export type DisconnectedRoomObject = RoomIDObject & PlayerIDObject;
 
 export interface StatusChangeObject extends RoomIDObject {
@@ -82,7 +87,7 @@ export interface Log {
 	created_at: Date;
 }
 
-export interface Message extends PlayerIDObject, RoomIDObject {
+export interface Message extends PlayerDisplayNameObject, RoomIDObject {
 	message: string;
 	type: "message" | "answer" | "reaction" | "system";
 	created_at: Date;
@@ -118,6 +123,10 @@ export interface ServerToClientEvents {
 	[MESSAGE_EVENTS.MESSAGE_REACTION]: (message: MessageUpdate) => void;
 	[MESSAGE_EVENTS.MESSAGE_SYSTEM]: (message: SystemMessage) => void;
 	[MESSAGE_EVENTS.LATEST_MESSAGES]: (messages: MessageUpdate[]) => void;
+
+	[MESSAGE_EVENTS.IS_TYPING]: (
+		obj: PlayerDisplayNameObject & { is_typing: boolean }
+	) => void;
 }
 
 // This interface represents the events that are from clients to server when you use socket.on/io.on
@@ -154,4 +163,8 @@ export interface ClientToServerEvents {
 	[MESSAGE_EVENTS.MESSAGE_ANSWER]: (obj: Message) => void;
 	[MESSAGE_EVENTS.JOIN]: (obj: RoomIDObject) => void;
 	[MESSAGE_EVENTS.MESSAGE_REACTION]: (obj: Message) => void;
+
+	[MESSAGE_EVENTS.IS_TYPING]: (
+		obj: RoomIDObject & PlayerDisplayNameObject & { is_typing: boolean }
+	) => void;
 }

@@ -121,7 +121,7 @@ const gameHandler = (io: Server, socket: Socket) => {
 		console.log("Emitting back new data");
 
 		const systemMessageToSend: SystemMessage = {
-			message: `${player?.display_name} selected Truth`,
+			message: `${player?.display_name} selected Truth: ${truth}`,
 			room_id: obj.room_id,
 			created_at: new Date(),
 			type: "system",
@@ -183,7 +183,7 @@ const gameHandler = (io: Server, socket: Socket) => {
 		console.log("Emitting back new data");
 
 		const systemMessageToSend: SystemMessage = {
-			message: `${player?.display_name} selected Dare`,
+			message: `${player?.display_name} selected Dare: ${dare}`,
 			room_id: obj.room_id,
 			created_at: new Date(),
 			type: "system",

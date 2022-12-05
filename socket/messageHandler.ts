@@ -1,7 +1,12 @@
 import { Server, Socket } from "socket.io";
 import ChatModel from "../model/chat";
-import PlayerModel from "../model/player";
-import { Message, MessageUpdate, MESSAGE_EVENTS, RoomIDObject } from "../Types";
+import {
+	Message,
+	MessageUpdate,
+	MESSAGE_EVENTS,
+	PlayerIDObject,
+	RoomIDObject,
+} from "../Types";
 
 const messageHandler = (io: Server, socket: Socket) => {
 	console.log("Registered message handler");
@@ -23,18 +28,8 @@ const messageHandler = (io: Server, socket: Socket) => {
 
 		// Get the player
 
-		const playerThatMessaged = await PlayerModel.getPlayer({
-			player_id: obj.player_id,
-		});
-
-		if (!playerThatMessaged) {
-			console.log("Player not found. Aborting sending message");
-			return;
-		}
-
 		const messageToSend: MessageUpdate = {
 			...obj,
-			display_name: playerThatMessaged.display_name,
 		};
 
 		console.log(messageToSend);
@@ -53,18 +48,8 @@ const messageHandler = (io: Server, socket: Socket) => {
 
 		// Get the player
 
-		const playerThatMessaged = await PlayerModel.getPlayer({
-			player_id: obj.player_id,
-		});
-
-		if (!playerThatMessaged) {
-			console.log("Player not found. Aborting sending message");
-			return;
-		}
-
 		const messageToSend: MessageUpdate = {
 			...obj,
-			display_name: playerThatMessaged.display_name,
 		};
 
 		console.log(messageToSend);
@@ -76,6 +61,15 @@ const messageHandler = (io: Server, socket: Socket) => {
 		await ChatModel.pushMessage(messageToSend);
 	};
 
+	const isTypingHandler = (
+		data: PlayerIDObject & RoomIDObject & { is_typing: boolean }
+	) => {
+		socket.broadcast.emit(MESSAGE_EVENTS.IS_TYPING, {
+			...data,
+		});
+	};
+
+	socket.on(MESSAGE_EVENTS.IS_TYPING, isTypingHandler);
 	socket.on(MESSAGE_EVENTS.JOIN, joinMessageHandler);
 	socket.on(MESSAGE_EVENTS.MESSAGE_NEW, newMessageHandler);
 	socket.on(MESSAGE_EVENTS.MESSAGE_REACTION, newReactionHandler);
