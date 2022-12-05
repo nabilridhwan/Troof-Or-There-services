@@ -1,4 +1,5 @@
 import { Server, Socket } from "socket.io";
+import ChatModel from "../model/chat";
 import PlayerModel from "../model/player";
 import RoomModel from "../model/room";
 import {
@@ -118,6 +119,9 @@ const roomHandler = (
 		socket.broadcast
 			.to(obj.room_id)
 			.emit(MESSAGE_EVENTS.MESSAGE_SYSTEM, systemMessageToSend);
+
+		// Write to database
+		ChatModel.pushSystemMessage(systemMessageToSend);
 	};
 
 	socket.on(EVENTS.GAME_UPDATE, statusChangeHandler);

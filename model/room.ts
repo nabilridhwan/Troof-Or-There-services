@@ -4,6 +4,14 @@ import { Action, Status } from "../Types";
 import Sequence from "./sequence";
 
 const RoomModel = {
+	deleteRoom: async (roomId: string) => {
+		return await prisma.game.delete({
+			where: {
+				room_id: roomId,
+			},
+		});
+	},
+
 	getRoom: async (selectObject: Prisma.gameWhereInput) => {
 		return await prisma.game.findFirst({
 			where: selectObject,

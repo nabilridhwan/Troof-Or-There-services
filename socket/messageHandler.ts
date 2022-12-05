@@ -1,4 +1,5 @@
 import { Server, Socket } from "socket.io";
+import ChatModel from "../model/chat";
 import PlayerModel from "../model/player";
 import { Message, MessageUpdate, MESSAGE_EVENTS, RoomIDObject } from "../Types";
 
@@ -7,6 +8,12 @@ const messageHandler = (io: Server, socket: Socket) => {
 
 	const joinMessageHandler = async (obj: RoomIDObject) => {
 		socket.join(obj.room_id);
+
+		// Get the latest 10 chat messages
+		const messages = await ChatModel.getLatestMessagesByRoomID(obj.room_id);
+
+		// Send the messages back to the client
+		socket.emit(MESSAGE_EVENTS.LATEST_MESSAGES, messages);
 	};
 
 	const newReactionHandler = async (obj: MessageUpdate) => {
@@ -27,22 +34,16 @@ const messageHandler = (io: Server, socket: Socket) => {
 
 		const messageToSend: MessageUpdate = {
 			...obj,
-			player: playerThatMessaged,
+			display_name: playerThatMessaged.display_name,
 		};
-
-		// await prisma.chat.create({
-		// 	data: {
-		// 		message: messageToSend.message,
-		// 		type: messageToSend.type,
-		// 		room_id: messageToSend.room_id,
-		// 		created_at: messageToSend.created_at,
-		// 	},
-		// });
 
 		console.log(messageToSend);
 
 		// Emit the message to the room
 		io.to(obj.room_id).emit(MESSAGE_EVENTS.MESSAGE_REACTION, messageToSend);
+
+		// Save the message to the database
+		await ChatModel.pushMessage(messageToSend);
 	};
 
 	const newMessageHandler = async (obj: Message) => {
@@ -63,23 +64,16 @@ const messageHandler = (io: Server, socket: Socket) => {
 
 		const messageToSend: MessageUpdate = {
 			...obj,
-			player: playerThatMessaged,
+			display_name: playerThatMessaged.display_name,
 		};
 
 		console.log(messageToSend);
 
-		// await prisma.chat.create({
-		// 	data: {
-		// 		message: messageToSend.message,
-		// 		type: messageToSend.type,
-		// 		room_id: messageToSend.room_id,
-		// 		player_id: messageToSend.player_id,
-		// 		created_at: messageToSend.created_at,
-		// 	},
-		// });
-
 		// Emit the message to the room
 		io.to(obj.room_id).emit(MESSAGE_EVENTS.MESSAGE_NEW, messageToSend);
+
+		// Save the message to the database
+		await ChatModel.pushMessage(messageToSend);
 	};
 
 	socket.on(MESSAGE_EVENTS.JOIN, joinMessageHandler);

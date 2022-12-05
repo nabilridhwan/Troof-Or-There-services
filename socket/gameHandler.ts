@@ -1,5 +1,6 @@
 import { Server, Socket } from "socket.io";
 import prisma from "../database/prisma";
+import ChatModel from "../model/chat";
 import PlayerModel from "../model/player";
 import RoomModel from "../model/room";
 import Sequence from "../model/sequence";
@@ -9,7 +10,6 @@ import {
 	MESSAGE_EVENTS,
 	PlayerIDObject,
 	RoomIDObject,
-	Status,
 	SystemMessage,
 	TRUTH_OR_DARE_GAME,
 } from "../Types";
@@ -71,9 +71,10 @@ const gameHandler = (io: Server, socket: Socket) => {
 
 				// https://stackoverflow.com/questions/10058226/send-response-to-all-clients-except-sender
 				// sending to all clients in 'game' room(channel) except sender
-				socket.broadcast
-					.to(obj.room_id)
-					.emit(MESSAGE_EVENTS.MESSAGE_SYSTEM, systemMessageToSend);
+				io.to(obj.room_id).emit(
+					MESSAGE_EVENTS.MESSAGE_SYSTEM,
+					systemMessageToSend
+				);
 
 				// Broadcast the players in the room
 				io.to(obj.room_id).emit(EVENTS.PLAYERS_UPDATE, playersInRoom);
@@ -136,6 +137,9 @@ const gameHandler = (io: Server, socket: Socket) => {
 			logData,
 			player!
 		);
+
+		// Write to database
+		ChatModel.pushSystemMessage(systemMessageToSend);
 	};
 
 	const selectDareHandler = async (obj: RoomIDObject & PlayerIDObject) => {
@@ -195,6 +199,9 @@ const gameHandler = (io: Server, socket: Socket) => {
 			logData,
 			player!
 		);
+
+		// Write to database
+		ChatModel.pushSystemMessage(systemMessageToSend);
 	};
 
 	const continueHandler = async (obj: RoomIDObject) => {
@@ -258,6 +265,9 @@ const gameHandler = (io: Server, socket: Socket) => {
 		);
 
 		io.to(obj.room_id).emit(TRUTH_OR_DARE_GAME.CONTINUE, logData!, player!);
+
+		// Write to database
+		ChatModel.pushSystemMessage(systemMessageToSend);
 	};
 
 	const leaveGameHandler = async (obj: RoomIDObject & PlayerIDObject) => {
@@ -288,6 +298,9 @@ const gameHandler = (io: Server, socket: Socket) => {
 			MESSAGE_EVENTS.MESSAGE_SYSTEM,
 			systemMessageToSend
 		);
+
+		// Write to database
+		ChatModel.pushSystemMessage(systemMessageToSend);
 
 		// Emit to the room that the player has left, and hence the person sent back, if the ID matches, they will be redirected to home page
 		console.log("Emitting EVENTS.LEFT_GAME");
@@ -336,7 +349,7 @@ const gameHandler = (io: Server, socket: Socket) => {
 				);
 
 				// Destroy the room
-				await RoomModel.updateRoomStatus(obj.room_id, Status.Game_Over);
+				await RoomModel.deleteRoom(obj.room_id);
 
 				console.log(`Room ${obj.room_id} destroyed successfully`);
 				return;

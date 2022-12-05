@@ -11,6 +11,7 @@ export enum EVENTS {
 }
 
 export enum MESSAGE_EVENTS {
+	LATEST_MESSAGES = "event:latest_messages",
 	MESSAGE_NEW = "message:new",
 	MESSAGE_ANSWER = "message:answer",
 	MESSAGE_REACTION = "message:reaction",
@@ -94,7 +95,7 @@ export interface SystemMessage extends RoomIDObject {
 }
 
 export interface MessageUpdate extends Message {
-	player: Player;
+	display_name: string;
 }
 
 // This interface represents the events that are from server to clients when you use socket.emit/io.emit
@@ -116,6 +117,7 @@ export interface ServerToClientEvents {
 	[MESSAGE_EVENTS.MESSAGE_ANSWER]: (message: MessageUpdate) => void;
 	[MESSAGE_EVENTS.MESSAGE_REACTION]: (message: MessageUpdate) => void;
 	[MESSAGE_EVENTS.MESSAGE_SYSTEM]: (message: SystemMessage) => void;
+	[MESSAGE_EVENTS.LATEST_MESSAGES]: (messages: MessageUpdate[]) => void;
 }
 
 // This interface represents the events that are from clients to server when you use socket.on/io.on
