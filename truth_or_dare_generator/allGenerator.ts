@@ -42,16 +42,33 @@ const truths: string[] = [];
 	// Wait for Promise.all to finish
 	await Promise.all(write);
 
+	// Remove duplicates
+	const uniqueDares = [...new Set(dares)];
+	const uniqueTruths = [...new Set(truths)];
+
 	// Write the files
-	await fs.writeFile("./output/all_dares.json", JSON.stringify(dares), {
+	await fs.writeFile("./output/all_dares.json", JSON.stringify(uniqueDares), {
 		encoding: "utf-8",
 		flag: "w",
 	});
 
-	await fs.writeFile("./output/all_truths.json", JSON.stringify(truths), {
-		encoding: "utf-8",
-		flag: "w",
-	});
+	await fs.writeFile(
+		"./output/all_truths.json",
+		JSON.stringify(uniqueTruths),
+		{
+			encoding: "utf-8",
+			flag: "w",
+		}
+	);
 
-	console.log("Done. Total: ", truths.length + dares.length);
+	console.log("Done.");
+	console.log(
+		`Filtered out ${dares.length - uniqueDares.length} duplicate dares.`
+	);
+	console.log(
+		`Filtered out ${truths.length - uniqueTruths.length} duplicate truths.`
+	);
+	console.log(`Total Dares: ${uniqueDares.length}`);
+	console.log(`Total Truths: ${uniqueTruths.length}`);
+	console.log(`Total: ${uniqueDares.length + uniqueTruths.length}`);
 })();
