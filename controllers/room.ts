@@ -8,6 +8,10 @@ import SuccessResponse from "../responses/SuccessResponse";
 import { Status } from "../Types";
 import { generateRoomID } from "../utils/generators";
 
+const GetRoomSchema = z.object({
+	room_id: z.string(),
+});
+
 const JoinRoomSchema = z.object({
 	room_id: z.string(),
 	display_name: z.string(),
@@ -18,6 +22,50 @@ const CreateRoomSchema = z.object({
 });
 
 const Room = {
+	Get: async (
+		req: Request<{}, {}, {}, { room_id: string }>,
+		res: Response
+	) => {
+		try {
+			GetRoomSchema.parse(req.query);
+		} catch (error) {
+			if (error instanceof ZodError) {
+				const e = error.flatten((issue: ZodIssue) => ({
+					message: issue.message,
+					error: issue.code,
+				}));
+
+				return new BadRequest("Invalid request", e).handleResponse(
+					req,
+					res
+				);
+			}
+		}
+
+		const { room_id } = req.query;
+
+		// Check if the room exists
+		const room = await RoomModel.getRoom({
+			room_id,
+			status: {
+				not: Status.Game_Over,
+			},
+		});
+
+		if (!room) {
+			return new NotFoundResponse(
+				"Room does not exist",
+				{}
+			).handleResponse(req, res);
+		}
+
+		// Return the room and player_id
+		return new SuccessResponse("Successfully got room", {
+			room_id,
+			status: room.status,
+		}).handleResponse(req, res);
+	},
+
 	Join: async (
 		req: Request<{}, {}, { room_id: string; display_name: string }>,
 		res: Response

@@ -127,7 +127,8 @@ export interface ClientToServerEvents {
 	[EVENTS.START_GAME]: (obj: RoomIDObject) => void;
 
 	[EVENTS.CHANGE_NAME]: (
-		obj: RoomIDObject & PlayerIDObject & { display_name: string }
+		obj: RoomIDObject &
+			PlayerIDObject & { display_name: string; new_name: string }
 	) => void;
 
 	[TRUTH_OR_DARE_GAME.LEAVE_GAME]: (

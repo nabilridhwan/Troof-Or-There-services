@@ -5,11 +5,13 @@ import {
 	ClientToServerEvents,
 	DisconnectedRoomObject,
 	EVENTS,
+	MESSAGE_EVENTS,
 	Room,
 	RoomIDObject,
 	ServerToClientEvents,
 	Status,
 	StatusChangeObject,
+	SystemMessage,
 } from "../Types";
 
 const roomHandler = (
@@ -97,13 +99,25 @@ const roomHandler = (
 		console.log(`Change name received for ${obj.player_id} ${obj.room_id}`);
 
 		// Change the users's name
-		await PlayerModel.updatePlayerName(obj.player_id, obj.display_name);
+		await PlayerModel.updatePlayerName(obj.player_id, obj.new_name);
 
 		// Get all the players in the room
 		const players = await PlayerModel.getPlayersInRoom(obj.room_id);
 
+		// Broadcast back to the room a system message
+		const systemMessageToSend: SystemMessage = {
+			message: `${obj?.display_name} has changed their name to ${obj.new_name}`,
+			room_id: obj.room_id,
+			created_at: new Date(),
+			type: "system",
+		};
+
 		// Broadcast back to the room the latest players
 		io.to(obj.room_id).emit(EVENTS.PLAYERS_UPDATE, players);
+
+		socket.broadcast
+			.to(obj.room_id)
+			.emit(MESSAGE_EVENTS.MESSAGE_SYSTEM, systemMessageToSend);
 	};
 
 	socket.on(EVENTS.GAME_UPDATE, statusChangeHandler);
