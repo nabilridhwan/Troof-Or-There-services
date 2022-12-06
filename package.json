@@ -1,6 +1,6 @@
 {
 	"name": "troof-or-there-services",
-	"version": "0.2.4",
+	"version": "0.2.5",
 	"description": "",
 	"main": "index.ts",
 	"scripts": {
@@ -18,11 +18,14 @@
 		"cors": "^2.8.5",
 		"dotenv": "^16.0.3",
 		"express": "^4.18.2",
+		"make-random": "^3.0.2",
 		"nanoid": "3.3.4",
 		"rand-seed": "^1.0.2",
 		"random-seed": "^0.3.0",
+		"random-words": "^1.2.0",
 		"socket.io": "^4.5.4",
 		"ts-node": "^10.9.1",
+		"xkpasswd": "^1.0.5",
 		"zod": "^3.19.1"
 	},
 	"devDependencies": {

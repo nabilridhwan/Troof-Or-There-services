@@ -14,7 +14,7 @@ const GetRoomSchema = z.object({
 
 const JoinRoomSchema = z.object({
 	room_id: z.string(),
-	display_name: z.string(),
+	display_name: z.string().min(20),
 });
 
 const CreateRoomSchema = z.object({
@@ -90,7 +90,7 @@ const Room = {
 
 		// Check if the room exists
 		const room = await RoomModel.getRoom({
-			room_id,
+			room_id: room_id.toLowerCase(),
 			status: {
 				not: Status.Game_Over,
 			},
@@ -144,7 +144,7 @@ const Room = {
 		// Generate a room_id
 		console.log(`Created room with id ${generateRoomID().toUpperCase()}`);
 
-		const room_id = generateRoomID().toUpperCase();
+		const room_id = generateRoomID();
 
 		// TODO: Verification of the display name
 		// Get the display name

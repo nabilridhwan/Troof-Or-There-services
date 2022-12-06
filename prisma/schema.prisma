@@ -21,13 +21,14 @@ model chat {
 }
 
 model game {
-  room_id         String           @id @default("") @db.VarChar
-  status          String           @db.VarChar
-  room_created_at DateTime         @default(now()) @db.Timestamptz(6)
-  chat            chat[]
-  log             log[]
-  player          player[]
-  player_sequence player_sequence?
+  room_id           String           @id @default("") @db.VarChar
+  status            String           @db.VarChar
+  room_created_at   DateTime         @default(now()) @db.Timestamptz(6)
+  status_updated_at DateTime         @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  chat              chat[]
+  log               log[]
+  player            player[]
+  player_sequence   player_sequence?
 
   @@map(" game")
 }
@@ -35,13 +36,13 @@ model game {
 model log {
   action       String   @db.VarChar
   game_room_id String   @db.VarChar
-  player_id    String
+  player_id    String   @default(dbgenerated("uuid_generate_v4()")) @db.VarChar
   data         String
   created_at   DateTime @default(now()) @db.Timestamptz(6)
-  game         game     @relation(fields: [game_room_id], references: [room_id], onDelete: Cascade)
-  player       player   @relation(fields: [player_id], references: [player_id], onDelete: Cascade)
+  id           Int      @default(autoincrement())
+  game         game     @relation(fields: [game_room_id], references: [room_id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@id([game_room_id, player_id, created_at])
+  @@id([game_room_id, player_id, id])
 }
 
 model player {
@@ -50,7 +51,6 @@ model player {
   joined_at       DateTime?         @default(now()) @db.Timestamptz(6)
   game_room_id    String            @db.VarChar
   is_party_leader Boolean           @default(false)
-  log             log[]
   game            game              @relation(fields: [game_room_id], references: [room_id], onDelete: Cascade)
   player_sequence player_sequence[]
 }
@@ -61,4 +61,13 @@ model player_sequence {
   current_player_id String
   player            player    @relation(fields: [current_player_id], references: [player_id], onDelete: Cascade)
   game              game      @relation(fields: [game_room_id], references: [room_id], onDelete: Cascade)
+}
+
+model question {
+  id         BigInt   @id @default(autoincrement())
+  type       String   @db.VarChar
+  data       String
+  available  Boolean? @default(true)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  batch_name String
 }

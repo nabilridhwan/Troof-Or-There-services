@@ -10,6 +10,7 @@ import {
 	MESSAGE_EVENTS,
 	PlayerIDObject,
 	RoomIDObject,
+	Status,
 	SystemMessage,
 	TRUTH_OR_DARE_GAME,
 } from "../Types";
@@ -55,6 +56,11 @@ const gameHandler = (io: Server, socket: Socket) => {
 
 		Promise.all([lastLogItem, player, playersInRoom, playerWhoJoined]).then(
 			([lastLogItem, player, playersInRoom, playerWhoJoinedData]) => {
+				console.log(lastLogItem);
+				console.log(player);
+				console.log(playersInRoom);
+				console.log(playerWhoJoinedData);
+
 				// Broadcast the log to the room
 				socket.emit(
 					TRUTH_OR_DARE_GAME.INCOMING_DATA,
@@ -85,7 +91,7 @@ const gameHandler = (io: Server, socket: Socket) => {
 	const selectTruthHandler = async (obj: RoomIDObject & PlayerIDObject) => {
 		console.log(`Truth received from ${obj.player_id}`);
 		// Emit a dare to the room for the player
-		const truth = get_truth();
+		const truth = await get_truth();
 
 		// Find the player
 		const sequenceData = await Sequence.getCurrentPlayer(obj.room_id);
@@ -121,7 +127,14 @@ const gameHandler = (io: Server, socket: Socket) => {
 		console.log("Emitting back new data");
 
 		const systemMessageToSend: SystemMessage = {
-			message: `${player?.display_name} selected Truth: ${truth}`,
+			message: `${player?.display_name} selected Truth`,
+			room_id: obj.room_id,
+			created_at: new Date(),
+			type: "system",
+		};
+
+		const dataSystemMessageToSend: SystemMessage = {
+			message: `${truth}`,
 			room_id: obj.room_id,
 			created_at: new Date(),
 			type: "system",
@@ -133,6 +146,11 @@ const gameHandler = (io: Server, socket: Socket) => {
 		);
 
 		io.to(obj.room_id).emit(
+			MESSAGE_EVENTS.MESSAGE_SYSTEM,
+			dataSystemMessageToSend
+		);
+
+		io.to(obj.room_id).emit(
 			TRUTH_OR_DARE_GAME.INCOMING_DATA,
 			logData,
 			player!
@@ -140,6 +158,7 @@ const gameHandler = (io: Server, socket: Socket) => {
 
 		// Write to database
 		ChatModel.pushSystemMessage(systemMessageToSend);
+		ChatModel.pushSystemMessage(dataSystemMessageToSend);
 	};
 
 	const selectDareHandler = async (obj: RoomIDObject & PlayerIDObject) => {
@@ -147,7 +166,7 @@ const gameHandler = (io: Server, socket: Socket) => {
 
 		// Emit a dare to the room for the player
 
-		const dare = get_dare();
+		const dare = await get_dare();
 
 		// Find the player
 		const sequenceData = await Sequence.getCurrentPlayer(obj.room_id);
@@ -183,7 +202,14 @@ const gameHandler = (io: Server, socket: Socket) => {
 		console.log("Emitting back new data");
 
 		const systemMessageToSend: SystemMessage = {
-			message: `${player?.display_name} selected Dare: ${dare}`,
+			message: `${player?.display_name} selected Dare`,
+			room_id: obj.room_id,
+			created_at: new Date(),
+			type: "system",
+		};
+
+		const dataSystemMessageToSend: SystemMessage = {
+			message: `${dare}`,
 			room_id: obj.room_id,
 			created_at: new Date(),
 			type: "system",
@@ -195,6 +221,11 @@ const gameHandler = (io: Server, socket: Socket) => {
 		);
 
 		io.to(obj.room_id).emit(
+			MESSAGE_EVENTS.MESSAGE_SYSTEM,
+			dataSystemMessageToSend
+		);
+
+		io.to(obj.room_id).emit(
 			TRUTH_OR_DARE_GAME.INCOMING_DATA,
 			logData,
 			player!
@@ -202,6 +233,7 @@ const gameHandler = (io: Server, socket: Socket) => {
 
 		// Write to database
 		ChatModel.pushSystemMessage(systemMessageToSend);
+		ChatModel.pushSystemMessage(dataSystemMessageToSend);
 	};
 
 	const continueHandler = async (obj: RoomIDObject) => {
@@ -345,13 +377,13 @@ const gameHandler = (io: Server, socket: Socket) => {
 			if (remainingPlayersIfCurrentPlayerIsRemoved.length === 0) {
 				// TODO: Handle this case
 				console.log(
-					"No more players will be left in the room. Destroying the room"
+					"No more players will be left in the room. Setting status to game_over"
 				);
 
 				// Destroy the room
-				await RoomModel.deleteRoom(obj.room_id);
+				await RoomModel.updateRoomStatus(obj.room_id, Status.Game_Over);
 
-				console.log(`Room ${obj.room_id} destroyed successfully`);
+				console.log(`Room ${obj.room_id} set to game_over`);
 				return;
 			}
 

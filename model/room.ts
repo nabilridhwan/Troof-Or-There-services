@@ -5,6 +5,8 @@ import Sequence from "./sequence";
 
 const RoomModel = {
 	deleteRoom: async (roomId: string) => {
+		console.log("Delete room called, deleting room with id", roomId);
+		roomId = "B4HYL1";
 		return await prisma.game.delete({
 			where: {
 				room_id: roomId,
@@ -95,6 +97,7 @@ const RoomModel = {
 			},
 			data: {
 				status: status,
+				status_updated_at: new Date(),
 			},
 		});
 
