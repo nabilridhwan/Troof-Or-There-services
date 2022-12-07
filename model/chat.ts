@@ -1,5 +1,5 @@
 import prisma from "../database/prisma";
-import { BaseNewMessage, SystemMessage } from "../Types";
+import { MessageUpdatedFromServer, SystemMessage } from "../Types";
 
 const ChatModel = {
 	pushSystemMessage: async (message: SystemMessage) => {
@@ -11,40 +11,27 @@ const ChatModel = {
 				message: messageText,
 				type,
 			},
-
-			select: {
-				created_at: true,
-				type: true,
-				message: true,
-				room_id: true,
-				player_id: true,
-				display_name: true,
-				id: true,
-				reply_to: true,
-			},
 		});
 	},
 
-	pushMessage: async (message: BaseNewMessage) => {
-		const { room_id, message: messageText, type } = message;
+	pushMessage: async (message: MessageUpdatedFromServer) => {
+		const {
+			room_id,
+			message: messageText,
+			type,
+			reply_to,
+			id,
+			display_name,
+		} = message;
 
 		return await prisma.chat.create({
 			data: {
+				id,
 				room_id,
-				type: type,
-				display_name: message.display_name,
-				reply_to: message.reply_to,
+				display_name,
 				message: messageText,
-			},
-			select: {
-				created_at: true,
-				type: true,
-				message: true,
-				room_id: true,
-				player_id: true,
-				display_name: true,
-				id: true,
-				reply_to: true,
+				type,
+				reply_to,
 			},
 		});
 	},
@@ -64,7 +51,7 @@ const ChatModel = {
 				id: true,
 				reply_to: true,
 			},
-			take: 20,
+			take: 50,
 			orderBy: {
 				created_at: "desc",
 			},

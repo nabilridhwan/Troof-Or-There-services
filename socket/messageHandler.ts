@@ -8,6 +8,8 @@ import {
 	RoomIDObject,
 } from "../Types";
 
+import { v4 as generateUUIDv4 } from "uuid";
+
 const messageHandler = (io: Server, socket: Socket) => {
 	console.log("Registered message handler");
 
@@ -21,19 +23,25 @@ const messageHandler = (io: Server, socket: Socket) => {
 		socket.emit(MESSAGE_EVENTS.LATEST_MESSAGES, messages);
 	};
 
-	const newReactionHandler = async (obj: MessageUpdatedFromServer) => {
+	const newReactionHandler = async (obj: BaseNewMessage) => {
 		console.log(
 			`Received new reaction (${obj.type}). Sending it to ${obj.room_id}`
 		);
 
-		// Save the message to the database
-		const m = await ChatModel.pushMessage(obj);
+		// 1. Generate UUID v4
+		const u = generateUUIDv4();
 
-		const messageToSend: MessageUpdatedFromServer = m;
+		// 2. Update obj with the new UUID
+		const new_obj: MessageUpdatedFromServer = {
+			...obj,
+			id: u,
+		};
 
-		console.log(messageToSend);
-		// Emit the message to the room
-		io.to(obj.room_id).emit(MESSAGE_EVENTS.MESSAGE_REACTION, m);
+		// 3. Broadcast it back
+		io.to(obj.room_id).emit(MESSAGE_EVENTS.MESSAGE_REACTION, new_obj);
+
+		// 4. Save it to the database
+		await ChatModel.pushMessage(new_obj);
 	};
 
 	const newMessageHandler = async (obj: BaseNewMessage) => {
@@ -42,20 +50,20 @@ const messageHandler = (io: Server, socket: Socket) => {
 			`Received new message (${obj.type}). Sending it to ${obj.room_id}`
 		);
 
-		// Get the player
+		// 1. Generate UUID v4
+		const u = generateUUIDv4();
 
-		const pushedMessage = await ChatModel.pushMessage({
+		// 2. Update obj with the new UUID
+		const new_obj: MessageUpdatedFromServer = {
 			...obj,
-		});
-
-		const messageToSend: MessageUpdatedFromServer = {
-			...pushedMessage,
+			id: u,
 		};
 
-		console.log(messageToSend);
+		// 3. Broadcast it back
+		io.to(obj.room_id).emit(MESSAGE_EVENTS.MESSAGE_REACTION, new_obj);
 
-		// Emit the message to the room
-		io.to(obj.room_id).emit(MESSAGE_EVENTS.MESSAGE_NEW, messageToSend);
+		// 4. Save it to the database
+		await ChatModel.pushMessage(new_obj);
 	};
 
 	const isTypingHandler = (

@@ -8,14 +8,14 @@ datasource db {
 }
 
 model chat {
-  id           Int      @id @default(autoincrement())
   room_id      String   @db.VarChar
   player_id    String?
   message      String   @db.VarChar
   type         String   @db.VarChar
   created_at   DateTime @default(now())
   display_name String   @default("")
-  reply_to     Int?
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.VarChar
+  reply_to     String?  @db.VarChar
   chat         chat?    @relation("chatTochat", fields: [reply_to], references: [id], onDelete: NoAction, onUpdate: NoAction)
   other_chat   chat[]   @relation("chatTochat")
   game         game     @relation(fields: [room_id], references: [room_id], onDelete: Cascade)

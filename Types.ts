@@ -93,7 +93,7 @@ export interface BaseNewMessage extends PlayerDisplayNameObject, RoomIDObject {
 	message: string;
 	type: MessageTypes | string;
 	display_name: string;
-	reply_to: number | null;
+	reply_to: string | null;
 	created_at: Date;
 }
 
@@ -102,8 +102,9 @@ export interface SystemMessage extends BaseNewMessage {
 	created_at: Date;
 }
 
+// ID is changed to string for UUID
 export interface MessageUpdatedFromServer extends BaseNewMessage {
-	id: number;
+	id: string;
 }
 
 // This interface represents the events that are from server to clients when you use socket.emit/io.emit
