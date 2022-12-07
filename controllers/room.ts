@@ -14,11 +14,11 @@ const GetRoomSchema = z.object({
 
 const JoinRoomSchema = z.object({
 	room_id: z.string(),
-	display_name: z.string().min(20),
+	display_name: z.string().max(20),
 });
 
 const CreateRoomSchema = z.object({
-	display_name: z.string(),
+	display_name: z.string().max(20),
 });
 
 const Room = {
