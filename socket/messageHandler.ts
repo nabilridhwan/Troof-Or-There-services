@@ -1,8 +1,8 @@
 import { Server, Socket } from "socket.io";
 import ChatModel from "../model/chat";
 import {
-	Message,
-	MessageUpdate,
+	BaseNewMessage,
+	MessageUpdatedFromServer,
 	MESSAGE_EVENTS,
 	PlayerIDObject,
 	RoomIDObject,
@@ -21,44 +21,41 @@ const messageHandler = (io: Server, socket: Socket) => {
 		socket.emit(MESSAGE_EVENTS.LATEST_MESSAGES, messages);
 	};
 
-	const newReactionHandler = async (obj: MessageUpdate) => {
+	const newReactionHandler = async (obj: MessageUpdatedFromServer) => {
 		console.log(
 			`Received new reaction (${obj.type}). Sending it to ${obj.room_id}`
 		);
 
-		// Get the player
+		// Save the message to the database
+		const m = await ChatModel.pushMessage(obj);
 
-		const messageToSend: MessageUpdate = {
-			...obj,
-		};
+		const messageToSend: MessageUpdatedFromServer = m;
 
 		console.log(messageToSend);
-
 		// Emit the message to the room
-		io.to(obj.room_id).emit(MESSAGE_EVENTS.MESSAGE_REACTION, messageToSend);
-
-		// Save the message to the database
-		await ChatModel.pushMessage(messageToSend);
+		io.to(obj.room_id).emit(MESSAGE_EVENTS.MESSAGE_REACTION, m);
 	};
 
-	const newMessageHandler = async (obj: Message) => {
+	const newMessageHandler = async (obj: BaseNewMessage) => {
+		console.log(obj);
 		console.log(
 			`Received new message (${obj.type}). Sending it to ${obj.room_id}`
 		);
 
 		// Get the player
 
-		const messageToSend: MessageUpdate = {
+		const pushedMessage = await ChatModel.pushMessage({
 			...obj,
+		});
+
+		const messageToSend: MessageUpdatedFromServer = {
+			...pushedMessage,
 		};
 
 		console.log(messageToSend);
 
 		// Emit the message to the room
 		io.to(obj.room_id).emit(MESSAGE_EVENTS.MESSAGE_NEW, messageToSend);
-
-		// Save the message to the database
-		await ChatModel.pushMessage(messageToSend);
 	};
 
 	const isTypingHandler = (

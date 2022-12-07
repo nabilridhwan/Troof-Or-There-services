@@ -71,6 +71,8 @@ const gameHandler = (io: Server, socket: Socket) => {
 				const systemMessageToSend: SystemMessage = {
 					message: `${playerWhoJoinedData?.display_name} has joined the game`,
 					room_id: obj.room_id,
+					display_name: "",
+					reply_to: null,
 					created_at: new Date(),
 					type: "system",
 				};
@@ -129,6 +131,8 @@ const gameHandler = (io: Server, socket: Socket) => {
 		const systemMessageToSend: SystemMessage = {
 			message: `${player?.display_name} selected Truth`,
 			room_id: obj.room_id,
+			display_name: "",
+			reply_to: null,
 			created_at: new Date(),
 			type: "system",
 		};
@@ -136,6 +140,8 @@ const gameHandler = (io: Server, socket: Socket) => {
 		const dataSystemMessageToSend: SystemMessage = {
 			message: `${truth}`,
 			room_id: obj.room_id,
+			display_name: "",
+			reply_to: null,
 			created_at: new Date(),
 			type: "system",
 		};
@@ -204,6 +210,8 @@ const gameHandler = (io: Server, socket: Socket) => {
 		const systemMessageToSend: SystemMessage = {
 			message: `${player?.display_name} selected Dare`,
 			room_id: obj.room_id,
+			display_name: "",
+			reply_to: null,
 			created_at: new Date(),
 			type: "system",
 		};
@@ -212,6 +220,8 @@ const gameHandler = (io: Server, socket: Socket) => {
 			message: `${dare}`,
 			room_id: obj.room_id,
 			created_at: new Date(),
+			display_name: "",
+			reply_to: null,
 			type: "system",
 		};
 
@@ -286,6 +296,8 @@ const gameHandler = (io: Server, socket: Socket) => {
 
 		const systemMessageToSend: SystemMessage = {
 			message: `It's ${player?.display_name}'s turn`,
+			display_name: "",
+			reply_to: null,
 			room_id: obj.room_id,
 			created_at: new Date(),
 			type: "system",
@@ -321,6 +333,8 @@ const gameHandler = (io: Server, socket: Socket) => {
 
 		const systemMessageToSend: SystemMessage = {
 			message: `${player?.display_name} has left the game`,
+			display_name: "",
+			reply_to: null,
 			room_id: obj.room_id,
 			created_at: new Date(),
 			type: "system",

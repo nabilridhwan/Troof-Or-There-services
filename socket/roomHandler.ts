@@ -109,6 +109,8 @@ const roomHandler = (
 		const systemMessageToSend: SystemMessage = {
 			message: `${obj?.display_name} has changed their name to ${obj.new_name}`,
 			room_id: obj.room_id,
+			display_name: "",
+			reply_to: null,
 			created_at: new Date(),
 			type: "system",
 		};

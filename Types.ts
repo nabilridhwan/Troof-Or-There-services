@@ -87,20 +87,23 @@ export interface Log {
 	created_at: Date;
 }
 
-export interface Message extends PlayerDisplayNameObject, RoomIDObject {
+type MessageTypes = "message" | "answer" | "reaction" | "system" | "reply";
+
+export interface BaseNewMessage extends PlayerDisplayNameObject, RoomIDObject {
 	message: string;
-	type: "message" | "answer" | "reaction" | "system";
+	type: MessageTypes | string;
+	display_name: string;
+	reply_to: number | null;
 	created_at: Date;
 }
 
-export interface SystemMessage extends RoomIDObject {
-	message: string;
+export interface SystemMessage extends BaseNewMessage {
 	type: "system";
 	created_at: Date;
 }
 
-export interface MessageUpdate extends Message {
-	display_name: string;
+export interface MessageUpdatedFromServer extends BaseNewMessage {
+	id: number;
 }
 
 // This interface represents the events that are from server to clients when you use socket.emit/io.emit
@@ -118,11 +121,17 @@ export interface ServerToClientEvents {
 	[TRUTH_OR_DARE_GAME.JOINED]: (log: Log, player: Player) => void;
 
 	// Messages
-	[MESSAGE_EVENTS.MESSAGE_NEW]: (message: MessageUpdate) => void;
-	[MESSAGE_EVENTS.MESSAGE_ANSWER]: (message: MessageUpdate) => void;
-	[MESSAGE_EVENTS.MESSAGE_REACTION]: (message: MessageUpdate) => void;
+	[MESSAGE_EVENTS.MESSAGE_NEW]: (message: MessageUpdatedFromServer) => void;
+	[MESSAGE_EVENTS.MESSAGE_ANSWER]: (
+		message: MessageUpdatedFromServer
+	) => void;
+	[MESSAGE_EVENTS.MESSAGE_REACTION]: (
+		message: MessageUpdatedFromServer
+	) => void;
 	[MESSAGE_EVENTS.MESSAGE_SYSTEM]: (message: SystemMessage) => void;
-	[MESSAGE_EVENTS.LATEST_MESSAGES]: (messages: MessageUpdate[]) => void;
+	[MESSAGE_EVENTS.LATEST_MESSAGES]: (
+		messages: MessageUpdatedFromServer[]
+	) => void;
 
 	[MESSAGE_EVENTS.IS_TYPING]: (
 		obj: PlayerDisplayNameObject & { is_typing: boolean }
@@ -159,10 +168,10 @@ export interface ClientToServerEvents {
 	[TRUTH_OR_DARE_GAME.JOINED]: (obj: RoomIDObject & PlayerIDObject) => void;
 
 	// Messages
-	[MESSAGE_EVENTS.MESSAGE_NEW]: (obj: Message) => void;
-	[MESSAGE_EVENTS.MESSAGE_ANSWER]: (obj: Message) => void;
+	[MESSAGE_EVENTS.MESSAGE_NEW]: (obj: BaseNewMessage) => void;
+	[MESSAGE_EVENTS.MESSAGE_ANSWER]: (obj: BaseNewMessage) => void;
 	[MESSAGE_EVENTS.JOIN]: (obj: RoomIDObject) => void;
-	[MESSAGE_EVENTS.MESSAGE_REACTION]: (obj: Message) => void;
+	[MESSAGE_EVENTS.MESSAGE_REACTION]: (obj: BaseNewMessage) => void;
 
 	[MESSAGE_EVENTS.IS_TYPING]: (
 		obj: RoomIDObject & PlayerDisplayNameObject & { is_typing: boolean }
